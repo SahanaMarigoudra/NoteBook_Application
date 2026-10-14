@@ -53,7 +53,7 @@ export default function SearchPage() {
               <p className="text-xs text-muted-foreground mb-3">{results?.length} result{results?.length !== 1 ? 's' : ''}</p>
               <div className="space-y-2">
                 {results?.map((note: any) => (
-                  <Link key={note._id} to={`/notes/${note._id}`} className="block rounded-lg border bg-card p-4 hover:shadow-md transition-shadow">
+                  <Link key={note._id} to={`/notes/${note._id}/edit`} className="block rounded-lg border bg-card p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm">{note.title}</h3>

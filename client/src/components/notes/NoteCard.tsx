@@ -58,7 +58,7 @@ export function NoteCard({ note, layout = 'grid' }: NoteCardProps) {
 
   return (
     <Link
-      to={`/notes/${note._id}`}
+      to={`/notes/${note._id}/edit`}
       className={cn(
         'note-card group block animate-fade-in relative',
         layout === 'list' && 'flex items-start gap-4'

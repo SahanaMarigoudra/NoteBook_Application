@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, LayoutGrid, List, Search, SlidersHorizontal, FileText } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, LayoutGrid, List, Search, SlidersHorizontal, FileText, X } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,22 @@ import { useCategories } from '@/hooks/useCategories';
 import type { NoteLayout } from '@/types';
 
 export default function NotesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlCat = searchParams.get('categoryId') || searchParams.get('category') || '';
+
   const [layout, setLayout] = useState<NoteLayout>('grid');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('updatedAt');
   const [order, setOrder] = useState('desc');
-  const [categoryId, setCategoryId] = useState('');
+  const [categoryId, setCategoryId] = useState(urlCat);
   const [page, setPage] = useState(1);
   const [debouncedSearch] = useDebounce(search, 400);
+
+  useEffect(() => {
+    if (urlCat) {
+      setCategoryId(urlCat);
+    }
+  }, [urlCat]);
 
   const { data: categoriesData } = useCategories();
 
@@ -109,6 +118,33 @@ export default function NotesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Active Category Filter Indicator */}
+      {categoryId && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-card/60 px-3 py-1.5 rounded-lg border border-border w-fit">
+          <span>Active notebook filter:</span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{
+                background: categoriesData?.find((c) => c._id === categoryId)?.color || 'currentColor',
+              }}
+            />
+            {categoriesData?.find((c) => c._id === categoryId)?.name || 'Category'}
+            <button
+              type="button"
+              onClick={() => {
+                setCategoryId('');
+                setSearchParams({});
+              }}
+              className="hover:text-destructive transition-colors ml-1 p-0.5 rounded"
+              title="Clear category filter"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Notes grid/list */}
       {isLoading ? (

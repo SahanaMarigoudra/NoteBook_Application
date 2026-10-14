@@ -1,21 +1,51 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { NOTEBOOK_TEMPLATES } from '@/data/notebookTemplates';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Loader2, Pin, Star, Archive, ArrowLeft, Check, AlertCircle, Plus, X } from 'lucide-react';
+import {
+  Save,
+  Loader2,
+  Pin,
+  Star,
+  Archive,
+  Trash2,
+  ArrowLeft,
+  Check,
+  AlertCircle,
+  Plus,
+  X,
+  BookOpen,
+  Calendar,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useNote, useCreateNote, useUpdateNote } from '@/hooks/useNotes';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useNote, useCreateNote, useUpdateNote, useDeleteNote } from '@/hooks/useNotes';
 import { useCategories } from '@/hooks/useCategories';
 import { useTags } from '@/hooks/useTags';
+import { NOTEBOOK_TEMPLATES } from '@/data/notebookTemplates';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
@@ -26,13 +56,16 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function NoteEditorPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
+
+  const templateParam = searchParams.get('template');
+  const categoryParam = searchParams.get('categoryId') || searchParams.get('category');
 
   const { data: existingNote, isLoading: noteLoading } = useNote(id ?? '');
   const { data: categories } = useCategories();
@@ -40,41 +73,58 @@ export default function NoteEditorPage() {
 
   const createNote = useCreateNote();
   const updateNote = useUpdateNote(id ?? '');
+  const deleteNote = useDeleteNote();
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [isDirty, setIsDirty] = useState(false);
-  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const savedContentRef = useRef('');
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { title: '', content: '', categoryId: '', isPinned: false, isFavorite: false },
+    defaultValues: {
+      title: '',
+      content: '',
+      categoryId: categoryParam ?? '',
+      isPinned: false,
+      isFavorite: false,
+    },
   });
 
-  const [searchParams] = useSearchParams();
-  const templateParam = searchParams.get('template');
-
-  // Populate form from notebook template if creating new note
+  // Populate form from notebook template if creating a new note
   useEffect(() => {
-    if (!isEdit && templateParam) {
-      const tpl = NOTEBOOK_TEMPLATES.find((t) => t.id === templateParam);
-      if (tpl) {
-        setValue('title', tpl.defaultTitle);
-        setValue('content', tpl.defaultContent);
-        if (categories && categories.length > 0) {
-          const matched = categories.find((c) => c.name.toLowerCase() === tpl.suggestedCategory.toLowerCase());
-          if (matched) {
-            setValue('categoryId', matched._id);
+    if (!isEdit) {
+      if (templateParam) {
+        const tpl = NOTEBOOK_TEMPLATES.find((t) => t.id === templateParam);
+        if (tpl) {
+          setValue('title', tpl.defaultTitle);
+          setValue('content', tpl.defaultContent);
+          if (categories && categories.length > 0) {
+            const matched = categories.find(
+              (c) => c.name.toLowerCase() === tpl.suggestedCategory.toLowerCase()
+            );
+            if (matched) {
+              setValue('categoryId', matched._id);
+            }
           }
+          setIsDirty(true);
+          toast.info(`Loaded ${tpl.name} template`);
         }
-        setIsDirty(true);
-        toast.info(`Loaded ${tpl.name} template`);
+      } else if (categoryParam) {
+        setValue('categoryId', categoryParam);
       }
     }
-  }, [isEdit, templateParam, categories, setValue]);
+  }, [isEdit, templateParam, categoryParam, categories, setValue]);
 
-  // Populate form when editing
+  // Populate form when editing an existing note
   useEffect(() => {
     if (existingNote && isEdit) {
       reset({
@@ -94,13 +144,20 @@ export default function NoteEditorPage() {
   const [debouncedContent] = useDebounce(watchedContent, 2000);
   const [debouncedTitle] = useDebounce(watchedTitle, 2000);
 
-  // Autosave for edit mode
+  // Autosave for existing notes
   useEffect(() => {
     if (!isEdit || !isDirty) return;
     const doAutoSave = async () => {
       try {
         setSaveStatus('saving');
-        const values = { title: debouncedTitle, content: debouncedContent, tags: selectedTags };
+        const values = {
+          title: debouncedTitle,
+          content: debouncedContent,
+          categoryId: watch('categoryId') || null,
+          tags: selectedTags,
+          isPinned: watch('isPinned'),
+          isFavorite: watch('isFavorite'),
+        };
         await updateNote.mutateAsync(values);
         setSaveStatus('saved');
         setIsDirty(false);
@@ -126,6 +183,7 @@ export default function NoteEditorPage() {
         isPinned: data.isPinned,
         isFavorite: data.isFavorite,
       };
+
       if (isEdit) {
         await updateNote.mutateAsync(payload);
         toast.success('Note saved');
@@ -134,6 +192,7 @@ export default function NoteEditorPage() {
         toast.success('Note created');
         navigate(`/notes/${note._id}/edit`, { replace: true });
       }
+
       setSaveStatus('saved');
       setIsDirty(false);
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -143,95 +202,200 @@ export default function NoteEditorPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      setIsDeleting(true);
+      await deleteNote.mutateAsync(id);
+      toast.success('Note moved to trash');
+      navigate('/notes');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'Failed to delete note');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const toggleTag = (tagId: string) => {
     setIsDirty(true);
-    setSelectedTags((prev) => prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]);
+    setSelectedTags((prev) =>
+      prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
+    );
   };
 
   const charCount = watchedContent?.length ?? 0;
+  const wordCount = watchedContent
+    ? watchedContent.trim().split(/\s+/).filter(Boolean).length
+    : 0;
 
   if (isEdit && noteLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
+    <div className="max-w-4xl mx-auto animate-fade-in pb-16">
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-6 flex-wrap">
-          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
+        {/* Top Action Toolbar */}
+        <div className="flex items-center justify-between gap-3 mb-6 pb-3 border-b border-border">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="hover:bg-accent text-foreground font-medium text-xs sm:text-sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Notes
           </Button>
-          <div className="ml-auto flex items-center gap-2">
-            {/* Save status */}
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Real-time Save Status Indicator */}
             {saveStatus === 'saving' && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span>Saving note…</span>
               </span>
             )}
             {saveStatus === 'saved' && (
-              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <Check className="h-3 w-3" /> Saved
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5" />
+                <span>Saved</span>
               </span>
             )}
             {saveStatus === 'error' && (
-              <span className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> Save failed
+              <span className="text-xs text-destructive flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5" />
+                <span>Save failed</span>
               </span>
             )}
-            <Button type="submit" size="sm" disabled={saveStatus === 'saving'}>
+
+            {/* Delete button (when editing existing note) */}
+            {isEdit && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    <span>Delete</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-card border-border text-foreground">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Move note to trash?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This note will be moved to your Trash. You can restore it anytime or permanently delete it later.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? 'Moving...' : 'Move to Trash'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            {/* Save Note Primary CTA */}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={saveStatus === 'saving'}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 shadow-sm"
+            >
               <Save className="h-4 w-4 mr-1.5" />
-              {isEdit ? 'Save' : 'Create Note'}
+              <span>{isEdit ? 'Save Note' : 'Create Note'}</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
-          {/* Main editor */}
-          <div className="space-y-4">
+        {/* Two-Column Editor Layout: Note Paper Surface & Sidebar Attributes */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
+          {/* Main Paper Surface */}
+          <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-4 relative notebook-ruled-lines">
+            {/* Top Date Header */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border/60">
+              <span className="font-serif italic">
+                {isEdit && existingNote
+                  ? `Updated ${new Date(existingNote.updatedAt).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}`
+                  : `Created ${new Date().toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}`}
+              </span>
+              <span className="font-mono text-[11px]">
+                {wordCount} {wordCount === 1 ? 'word' : 'words'} · {charCount} chars
+              </span>
+            </div>
+
+            {/* Title Input with Serif Styling */}
             <div>
               <Input
                 id="note-title"
-                placeholder="Note title"
-                className="text-lg font-medium h-11 border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+                placeholder="Give your note a title..."
+                className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground bg-transparent border-0 border-b border-dashed border-border/80 rounded-none px-0 py-2 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground/60"
                 {...register('title', { onChange: handleFieldChange })}
               />
-              {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
+              {errors.title && (
+                <p className="text-xs text-destructive mt-1.5">{errors.title.message}</p>
+              )}
             </div>
+
+            {/* Content Textarea */}
             <div>
               <Textarea
                 id="note-content"
-                placeholder="Start writing..."
-                className="min-h-[400px] resize-y border-0 px-0 focus-visible:ring-0 text-sm leading-relaxed"
+                placeholder="Start writing your thoughts, ideas, or study notes..."
+                className="min-h-[460px] resize-y bg-transparent border-0 px-0 focus-visible:ring-0 text-sm sm:text-base leading-relaxed text-foreground placeholder:text-muted-foreground/50 font-sans"
                 {...register('content', { onChange: handleFieldChange })}
               />
-              <p className="text-xs text-muted-foreground mt-1 text-right">{charCount.toLocaleString()} characters</p>
             </div>
           </div>
 
-          {/* Sidebar options */}
+          {/* Sidebar Note Attributes */}
           <div className="space-y-5">
-            {/* Category */}
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</Label>
+            {/* Category Selector */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Notebook Category
+              </Label>
               <Select
-                value={watch('categoryId')}
-                onValueChange={(v) => { setValue('categoryId', v === 'none' ? '' : v); handleFieldChange(); }}
+                value={watch('categoryId') || 'none'}
+                onValueChange={(v) => {
+                  setValue('categoryId', v === 'none' ? '' : v);
+                  handleFieldChange();
+                }}
               >
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="No category" />
+                <SelectTrigger className="w-full text-xs sm:text-sm bg-background border-border">
+                  <SelectValue placeholder="Select notebook category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No category</SelectItem>
+                  <SelectItem value="none">No category (Unsorted)</SelectItem>
                   {categories?.map((cat) => (
                     <SelectItem key={cat._id} value={cat._id}>
                       <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-full" style={{ background: cat.color }} />
-                        {cat.name}
+                        <div
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: cat.color }}
+                        />
+                        <span>{cat.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -239,63 +403,83 @@ export default function NoteEditorPage() {
               </Select>
             </div>
 
-            {/* Tags */}
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags</Label>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {/* Quick Note Options: Pin & Favorite */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Quick Options
+              </Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('isPinned', !watch('isPinned'));
+                    handleFieldChange();
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium transition-all ${
+                    watch('isPinned')
+                      ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
+                      : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Pin className={`h-3.5 w-3.5 ${watch('isPinned') ? 'fill-primary' : ''}`} />
+                  <span>Pinned</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('isFavorite', !watch('isFavorite'));
+                    handleFieldChange();
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium transition-all ${
+                    watch('isFavorite')
+                      ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold shadow-xs'
+                      : 'border-border hover:border-amber-400 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Star className={`h-3.5 w-3.5 ${watch('isFavorite') ? 'fill-amber-400' : ''}`} />
+                  <span>Favorite</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Tags Selection */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Tags
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
                 {tags?.map((tag) => (
                   <button
                     key={tag._id}
                     type="button"
                     onClick={() => toggleTag(tag._id)}
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border transition-all ${
                       selectedTags.includes(tag._id)
-                        ? 'bg-primary/10 border-primary/30 text-primary'
-                        : 'border-border hover:border-primary/30'
+                        ? 'bg-primary/15 border-primary/40 text-primary font-semibold'
+                        : 'border-border hover:border-primary/30 text-muted-foreground'
                     }`}
                   >
-                    {tag.name}
+                    <span>{tag.name}</span>
                     {selectedTags.includes(tag._id) && <X className="ml-1 h-3 w-3" />}
                   </button>
                 ))}
                 {(!tags || tags.length === 0) && (
-                  <p className="text-xs text-muted-foreground">No tags yet.</p>
+                  <p className="text-xs text-muted-foreground">No tags created yet.</p>
                 )}
               </div>
             </div>
 
-            {/* Pin & Favorite */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Options</Label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setValue('isPinned', !watch('isPinned')); handleFieldChange(); }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md border py-2 text-xs font-medium transition-colors ${
-                    watch('isPinned') ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border hover:border-primary/30'
-                  }`}
-                >
-                  <Pin className={`h-3.5 w-3.5 ${watch('isPinned') ? 'fill-primary' : ''}`} />
-                  Pinned
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setValue('isFavorite', !watch('isFavorite')); handleFieldChange(); }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md border py-2 text-xs font-medium transition-colors ${
-                    watch('isFavorite') ? 'border-amber-400/40 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'border-border hover:border-amber-400/30'
-                  }`}
-                >
-                  <Star className={`h-3.5 w-3.5 ${watch('isFavorite') ? 'fill-amber-400 text-amber-500' : ''}`} />
-                  Favorite
-                </button>
-              </div>
-            </div>
-
-            {/* Created/Updated info */}
+            {/* Metadata Timestamp Box */}
             {existingNote && (
-              <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-1">
-                <div><span className="font-medium">Created:</span> {new Date(existingNote.createdAt).toLocaleString()}</div>
-                <div><span className="font-medium">Updated:</span> {new Date(existingNote.updatedAt).toLocaleString()}</div>
+              <div className="rounded-xl border border-border/80 bg-card/60 p-4 text-xs text-muted-foreground space-y-1.5 font-sans">
+                <div>
+                  <span className="font-medium text-foreground">Created: </span>
+                  {new Date(existingNote.createdAt).toLocaleString()}
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Last modified: </span>
+                  {new Date(existingNote.updatedAt).toLocaleString()}
+                </div>
               </div>
             )}
           </div>

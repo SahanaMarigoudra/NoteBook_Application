@@ -3,8 +3,26 @@ import { Note } from '../../models/Note.js';
 import { createError } from '../../middleware/error-handler.js';
 import type { CreateCategoryInput, UpdateCategoryInput } from './categories.schema.js';
 
+export const DEFAULT_NOTEBOOK_CATEGORIES = [
+  { name: 'Study Notes', color: '#A6B49A' },
+  { name: 'Personal Journal', color: '#B96F52' },
+  { name: 'Ideas', color: '#D4A373' },
+  { name: 'Task Lists', color: '#5C768D' },
+];
+
 export async function listCategories(userId: string) {
-  return Category.find({ userId }).sort({ name: 1 });
+  let categories = await Category.find({ userId }).sort({ name: 1 });
+  if (categories.length === 0) {
+    try {
+      await Category.insertMany(
+        DEFAULT_NOTEBOOK_CATEGORIES.map((c) => ({ userId, ...c }))
+      );
+      categories = await Category.find({ userId }).sort({ name: 1 });
+    } catch {
+      categories = await Category.find({ userId }).sort({ name: 1 });
+    }
+  }
+  return categories;
 }
 
 export async function createCategory(userId: string, data: CreateCategoryInput) {
