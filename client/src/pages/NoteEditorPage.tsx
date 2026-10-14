@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { NOTEBOOK_TEMPLATES } from '@/data/notebookTemplates';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -50,6 +51,28 @@ export default function NoteEditorPage() {
     resolver: zodResolver(schema),
     defaultValues: { title: '', content: '', categoryId: '', isPinned: false, isFavorite: false },
   });
+
+  const [searchParams] = useSearchParams();
+  const templateParam = searchParams.get('template');
+
+  // Populate form from notebook template if creating new note
+  useEffect(() => {
+    if (!isEdit && templateParam) {
+      const tpl = NOTEBOOK_TEMPLATES.find((t) => t.id === templateParam);
+      if (tpl) {
+        setValue('title', tpl.defaultTitle);
+        setValue('content', tpl.defaultContent);
+        if (categories && categories.length > 0) {
+          const matched = categories.find((c) => c.name.toLowerCase() === tpl.suggestedCategory.toLowerCase());
+          if (matched) {
+            setValue('categoryId', matched._id);
+          }
+        }
+        setIsDirty(true);
+        toast.info(`Loaded ${tpl.name} template`);
+      }
+    }
+  }, [isEdit, templateParam, categories, setValue]);
 
   // Populate form when editing
   useEffect(() => {

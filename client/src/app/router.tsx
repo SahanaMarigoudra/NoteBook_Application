@@ -44,7 +44,7 @@ export function AppRouter() {
       <Suspense fallback={<Loading />}>
         <Routes>
           {/* Public user routes */}
-          <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 

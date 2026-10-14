@@ -38,6 +38,17 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        notebook: {
+          bg: '#F7F3EB',
+          paper: '#FFFCF5',
+          text: '#292821',
+          terracotta: '#B96F52',
+          sage: '#A6B49A',
+          brown: '#8A7967',
+          cover: '#2E221B',
+          amber: '#D4A373',
+          slate: '#5C768D',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -45,7 +56,10 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Newsreader"', '"Playfair Display"', 'Georgia', 'serif'],
+        display: ['"Playfair Display"', 'Georgia', 'serif'],
+        handwriting: ['"Caveat"', 'cursive'],
       },
       keyframes: {
         'accordion-down': {

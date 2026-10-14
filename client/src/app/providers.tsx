@@ -24,7 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <TooltipProvider>
             {children}
             <Toaster richColors position="top-right" />
-            <ReactQueryDevtools initialIsOpen={false} />
+            {import.meta.env.DEV && false && <ReactQueryDevtools initialIsOpen={false} />}
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
