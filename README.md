@@ -16,6 +16,14 @@ NoteSpace is a modern, enterprise-grade personal notes and knowledge management 
 - 📊 **Interactive Analytics Dashboard:** Real-time metrics computed via MongoDB aggregation pipelines (active, pinned, favorites, category breakdown) and interactive 7-day/30-day activity trends using Recharts.
 - 🌓 **Dark & Light Mode:** System-aware, responsive theme switcher with glassmorphic cards and polished UI tokens.
 - 🛡️ **Comprehensive Security:** Helmet protection, strict CORS allowlist, rate limiting, and Zod input validation on all routes.
+- 👑 **Dedicated Administrator Control Suite:**
+  - **Admin Authentication:** Secure dedicated portal at `/admin/login` with live backend role verification (`requireAdmin`) and access-denied handling (`/admin/forbidden`).
+  - **Live MongoDB Admin Dashboard:** 8 real-time metric cards, interactive Recharts graphs (user registrations, note creation, category distribution, account status breakdown).
+  - **User Management:** Searchable, sortable, paginated user table with note counts, role modification (`user` ↔ `admin`), status toggling (`active` ↔ `suspended`), and deletion with safeguards.
+  - **Notes Oversight & Privacy:** Bulk metadata-only inspection; private content inspection requires audited justification.
+  - **Category & Tag Management:** System-wide visibility with note binding counts and safe deletion.
+  - **Activity Logs & Audit Trail:** Immutable append-only audit trail capturing administrative operations, IP addresses, and outcomes.
+  - **System Settings & Health:** Application-level configuration (registration toggling, maintenance mode, quotas) and live infrastructure stats (Node, memory, uptime, database).
 
 ---
 
@@ -79,9 +87,21 @@ npm run dev
 ```
 
 The application will be accessible at:
-- **Frontend:** [http://localhost:5173](http://localhost:5173)
+- **User App:** [http://localhost:5173](http://localhost:5173)
+- **Admin Portal:** [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
+- **Admin Dashboard:** [http://localhost:5173/admin/dashboard](http://localhost:5173/admin/dashboard)
 - **Backend API:** [http://localhost:5000/api/v1](http://localhost:5000/api/v1)
 - **Health Check:** [http://localhost:5000/api/v1/health](http://localhost:5000/api/v1/health)
+
+### 5. Provisioning an Administrator Account
+To securely seed or promote an administrator account without exposing public endpoints:
+```bash
+# Provision default administrator (admin@notespace.io / AdminPassword123!)
+npm run seed:admin
+
+# Or supply custom credentials via arguments:
+npm run seed:admin -- admin@mycompany.com MyStrongPassword123! "Lead Admin"
+```
 
 ---
 

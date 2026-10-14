@@ -44,3 +44,25 @@ NoteSpace employs defense-in-depth principles across its frontend, API layer, an
 
 - Every database query for notes, categories, tags, and sessions strictly scopes using `{ userId: req.user.userId }`.
 - Cross-user access returns `404 Not Found` or `403 Forbidden` to prevent object-level authorization bypasses (IDOR).
+
+---
+
+## 5. Role-Based Access Control (RBAC) & Administrative Security
+
+- **Server-Side Role Verification:**
+  - `requireAdmin` middleware checks both the decoded JWT and live database state to verify `role === 'admin'` and `status !== 'suspended'`.
+  - Stale or tampered tokens are rejected before reaching controller logic.
+- **Root Admin Safeguards:**
+  - Logic prevents an administrator from accidentally demoting or deleting their own account.
+  - Prevents removal, demotion, or suspension of the sole active administrator.
+- **Account Suspension Mechanism:**
+  - When a user is suspended, all active refresh tokens in `RefreshSession` are instantly revoked server-side, blocking subsequent API calls immediately.
+- **Zero Public Admin Registration:**
+  - No public API allows registering as an administrator.
+  - Admin accounts are strictly provisioned via authenticated server CLI scripts (`npm run seed:admin`).
+- **Privacy-by-Default Note Inspection:**
+  - Admin bulk note lists never expose note content (`-content`).
+  - Accessing note content requires entering an administrative justification, and the access event is irrevocably logged to the `AuditLog` collection.
+- **Immutable Append-Only Audit Trail:**
+  - Sensitive administrative operations (role shifts, account suspensions, deletions, content views) are permanently written to MongoDB with actor ID, email, IP address, timestamp, and metadata.
+

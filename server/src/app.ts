@@ -18,6 +18,7 @@ import trashRoutes from './modules/trash/trash.routes.js';
 import searchRoutes from './modules/search/search.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
+import adminRoutes from './modules/admin/admin.routes.js';
 
 export function createApp() {
   const app = express();
@@ -69,6 +70,7 @@ export function createApp() {
   app.use('/api/v1/search', searchRoutes);
   app.use('/api/v1/dashboard', dashboardRoutes);
   app.use('/api/v1/users', usersRoutes);
+  app.use('/api/v1/admin', adminRoutes);
 
   // 404 handler
   app.use((_req, res) => {

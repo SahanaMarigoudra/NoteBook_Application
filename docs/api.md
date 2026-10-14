@@ -98,3 +98,30 @@ Or in case of errors:
 |---|---|---|---|
 | `PATCH` | `/users/me` | Update name and preferences | Yes |
 | `DELETE` | `/users/me` | Permanently delete account and all cascading data | Yes |
+
+---
+
+## 8. Administration (`/admin`)
+
+*All `/admin/*` routes require active authenticated session with verified `role === 'admin'`.*
+
+| Method | Endpoint | Description | Role Required |
+|---|---|---|---|
+| `GET` | `/admin/dashboard?days=7` | Real-time platform statistics (8 cards), 4 charts, and recent activity | Admin |
+| `GET` | `/admin/users` | Paginated, searchable, sortable list of all registered accounts | Admin |
+| `GET` | `/admin/users/:id` | Detailed account statistics (notes, categories, tags, last active) | Admin |
+| `PATCH` | `/admin/users/:id/role` | Promote/demote role (`{ role: 'user' \| 'admin' }`) with safeguards | Admin |
+| `PATCH` | `/admin/users/:id/status` | Activate/suspend user (`{ status: 'active' \| 'suspended' }`) | Admin |
+| `DELETE` | `/admin/users/:id` | Cascade delete user account and associated resources | Admin |
+| `GET` | `/admin/notes` | System-wide notes oversight (metadata only, content shielded) | Admin |
+| `GET` | `/admin/notes/:id?reason=...` | Inspect note content with required justification and audit record | Admin |
+| `DELETE` | `/admin/notes/:id` | Administrative permanent note deletion with audit log | Admin |
+| `GET` | `/admin/categories` | System-wide categories list with owner attribution and note counts | Admin |
+| `DELETE` | `/admin/categories/:id` | Delete category and cleanly unlink referencing notes | Admin |
+| `GET` | `/admin/tags` | System-wide tags list with owner attribution and note counts | Admin |
+| `DELETE` | `/admin/tags/:id` | Delete tag and cleanly remove from referencing notes | Admin |
+| `GET` | `/admin/audit-logs` | Filterable, paginated immutable audit trail logs | Admin |
+| `GET` | `/admin/settings` | Retrieve application policies and live runtime/database metrics | Admin |
+| `PATCH` | `/admin/settings` | Update application configuration with Zod validation | Admin |
+| `GET` | `/admin/health` | Live infrastructure health (memory, uptime, load average) | Admin |
+

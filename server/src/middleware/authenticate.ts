@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { User } from '../models/User.js';
 
 export interface AuthPayload {
   userId: string;
   email: string;
+  role?: 'user' | 'admin';
 }
 
 declare global {
@@ -37,3 +39,37 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     }
   }
 }
+
+export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Authentication required' });
+    return;
+  }
+
+  try {
+    const user = await User.findById(req.user.userId).select('role status');
+    if (!user) {
+      res.status(401).json({ success: false, error: 'User no longer exists' });
+      return;
+    }
+
+    if (user.status === 'suspended') {
+      res.status(403).json({ success: false, error: 'Account has been suspended' });
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Access denied: Administrator privileges required',
+        code: 'FORBIDDEN',
+      });
+      return;
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+

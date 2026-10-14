@@ -8,12 +8,14 @@ import { env } from '../../config/env.js';
 import { createError } from '../../middleware/error-handler.js';
 import type { RegisterInput, LoginInput, ChangePasswordInput } from './auth.schema.js';
 
+import { SystemSetting } from '../../models/SystemSetting.js';
+
 function hashToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
-function signAccessToken(userId: string, email: string): string {
-  return jwt.sign({ userId, email }, env.JWT_ACCESS_SECRET, {
+function signAccessToken(userId: string, email: string, role: string = 'user'): string {
+  return jwt.sign({ userId, email, role }, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 }
@@ -30,17 +32,29 @@ function parseExpiresIn(str: string): number {
 }
 
 export async function registerUser(data: RegisterInput, meta?: { ip?: string; userAgent?: string }) {
+  const setting = await SystemSetting.findOne();
+  if (setting && !setting.allowRegistration) {
+    throw createError('User registration is currently disabled by administrator', 403);
+  }
+
   const existing = await User.findOne({ email: data.email });
   if (existing) {
     throw createError('An account with this email already exists', 409);
   }
 
   const passwordHash = await bcrypt.hash(data.password, env.BCRYPT_ROUNDS);
-  const user = await User.create({ name: data.name, email: data.email, passwordHash });
+  const user = await User.create({
+    name: data.name,
+    email: data.email,
+    passwordHash,
+    role: 'user',
+    status: 'active',
+    lastActiveAt: new Date(),
+  });
 
   await ActivityEvent.create({ userId: user._id, eventType: 'user_registered' });
 
-  const accessToken = signAccessToken(String(user._id), user.email);
+  const accessToken = signAccessToken(String(user._id), user.email, user.role);
   const rawRefresh = generateRefreshToken();
   const expiresAt = new Date(Date.now() + parseExpiresIn(env.REFRESH_TOKEN_EXPIRES_IN));
 
@@ -61,14 +75,19 @@ export async function loginUser(data: LoginInput, meta?: { ip?: string; userAgen
     throw createError('Invalid email or password', 401);
   }
 
+  if (user.status === 'suspended') {
+    throw createError('Your account has been suspended. Please contact support.', 403);
+  }
+
   const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) {
     throw createError('Invalid email or password', 401);
   }
 
+  await user.updateOne({ lastActiveAt: new Date() });
   await ActivityEvent.create({ userId: user._id, eventType: 'user_login' });
 
-  const accessToken = signAccessToken(String(user._id), user.email);
+  const accessToken = signAccessToken(String(user._id), user.email, user.role);
   const rawRefresh = generateRefreshToken();
   const expiresAt = new Date(Date.now() + parseExpiresIn(env.REFRESH_TOKEN_EXPIRES_IN));
 
@@ -93,13 +112,15 @@ export async function refreshTokens(rawRefreshToken: string) {
   if (session.revokedAt) throw createError('Refresh token has been revoked', 401);
   if (session.expiresAt < new Date()) throw createError('Refresh token has expired', 401);
 
-  // Rotate: revoke old, issue new
-  await session.updateOne({ revokedAt: new Date() });
-
   const user = await User.findById(session.userId);
   if (!user) throw createError('User not found', 401);
+  if (user.status === 'suspended') throw createError('Account has been suspended', 403);
 
-  const accessToken = signAccessToken(String(user._id), user.email);
+  // Rotate: revoke old, issue new
+  await session.updateOne({ revokedAt: new Date() });
+  await user.updateOne({ lastActiveAt: new Date() });
+
+  const accessToken = signAccessToken(String(user._id), user.email, user.role);
   const rawRefresh = generateRefreshToken();
   const expiresAt = new Date(Date.now() + parseExpiresIn(env.REFRESH_TOKEN_EXPIRES_IN));
 
