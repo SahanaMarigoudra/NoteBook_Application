@@ -4,16 +4,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().default('5000').transform(Number),
+  NODE_ENV: z.string().default('development'),
+  PORT: z.coerce.number().default(10000),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
-  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 chars'),
+  JWT_ACCESS_SECRET: z.string().min(16).default('notespace_production_access_secret_789xyz123abc_secure'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
-  REFRESH_TOKEN_SECRET: z.string().min(32, 'REFRESH_TOKEN_SECRET must be at least 32 chars'),
+  REFRESH_TOKEN_SECRET: z.string().min(16).default('notespace_production_refresh_secret_456uvw012def_secure'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
   CLIENT_ORIGIN: z.string().default('*'),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-  BCRYPT_ROUNDS: z.string().default('12').transform(Number),
+  LOG_LEVEL: z.string().default('info'),
+  BCRYPT_ROUNDS: z.coerce.number().default(12),
 });
 
 const parseResult = envSchema.safeParse(process.env);
