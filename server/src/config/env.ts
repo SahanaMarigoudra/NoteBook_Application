@@ -11,7 +11,7 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_SECRET: z.string().min(32, 'REFRESH_TOKEN_SECRET must be at least 32 chars'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-  CLIENT_ORIGIN: z.string().url('CLIENT_ORIGIN must be a valid URL'),
+  CLIENT_ORIGIN: z.string().default('*'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   BCRYPT_ROUNDS: z.string().default('12').transform(Number),
 });

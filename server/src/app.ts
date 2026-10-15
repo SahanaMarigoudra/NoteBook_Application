@@ -26,10 +26,10 @@ export function createApp() {
   // Security headers
   app.use(helmet());
 
-  // CORS — explicit allowlist only
+  // CORS configuration
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: env.CLIENT_ORIGIN === '*' ? true : env.CLIENT_ORIGIN,
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
