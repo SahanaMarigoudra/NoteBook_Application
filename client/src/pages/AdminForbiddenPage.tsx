@@ -41,11 +41,6 @@ export default function AdminForbiddenPage() {
           Switch Administrator Account
         </Button>
       </div>
-
-      <div className="mt-12 rounded-xl border bg-muted/30 p-4 text-xs text-muted-foreground max-w-sm">
-        <strong>Tip:</strong> If you are the system owner, you can grant yourself administrative privileges by running{' '}
-        <code className="text-primary font-mono">npm run seed:admin</code> in your project terminal.
-      </div>
     </div>
   );
 }

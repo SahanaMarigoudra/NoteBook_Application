@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/features/auth/AuthContext';
 import { ProtectedRoute, PublicRoute } from './ProtectedRoute';
 import { AdminRoute, AdminPublicRoute } from './AdminRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -38,6 +39,19 @@ const Loading = () => (
   </div>
 );
 
+function RoleAwareDashboardRoute() {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const forceUserView = searchParams.get('view') === 'user';
+
+  // If authenticated as an administrator, default to Admin Control Panel unless ?view=user is passed
+  if (user?.role === 'admin' && !forceUserView) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return <DashboardPage />;
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -50,7 +64,7 @@ export function AppRouter() {
 
           {/* User protected routes */}
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="dashboard" element={<RoleAwareDashboardRoute />} />
             <Route path="notes" element={<NotesPage />} />
             <Route path="notes/new" element={<NoteEditorPage />} />
             <Route path="notes/:id" element={<NoteDetailPage />} />

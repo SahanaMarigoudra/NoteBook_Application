@@ -254,33 +254,131 @@ export default function LandingPage() {
       </main>
 
       {/* 6. Editorial Footer */}
-      <footer className="border-t border-[#E8DEC8] bg-[#FAF7F0] py-12 text-sm text-[#554A3E]">
+      <footer className="border-t border-[#E8DEC8] bg-[#FAF7F0] pt-14 pb-10 text-sm text-[#554A3E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-[#E8DEC8]">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#3D2C20] flex items-center justify-center text-[#F7F3EB]">
-                <BookOpen className="w-4 h-4 text-[#D4A373]" />
+          {/* Main Footer Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 pb-10 border-b border-[#E8DEC8]">
+            
+            {/* Col 1 & 2: Brand Identity & Manifesto */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#3D2C20] to-[#251A13] flex items-center justify-center text-[#F7F3EB] shadow-md shadow-[#3D2C20]/20 border border-[#5A4333]/40">
+                  <BookOpen className="w-5 h-5 text-[#D4A373]" />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-xl font-bold tracking-tight text-[#292821]">NoteSpace</span>
+                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#EAE2D2] text-[#8A7967] border border-[#DDD3C2] font-semibold">
+                      v1.2
+                    </span>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-widest text-[#8A7967] font-sans font-medium">
+                    Digital Notebook & Archive
+                  </span>
+                </div>
               </div>
-              <span className="font-serif text-lg font-bold text-[#292821]">NoteSpace</span>
-              <span className="text-xs text-[#8A7967] font-mono">v1.2</span>
+
+              <p className="text-sm text-[#6B5E4F] leading-relaxed max-w-sm">
+                A serene, tactile workspace designed for deep thinkers, writers, and students. Honoring human pacing with zero digital noise.
+              </p>
+
+              <div className="pt-2 flex items-center gap-3">
+                <Button
+                  size="sm"
+                  onClick={handleCreateNote}
+                  className="bg-[#B96F52] hover:bg-[#A35D42] text-white text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-xs font-medium"
+                >
+                  <PenTool className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Begin Writing</span>
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="text-xs text-[#8A7967] hover:text-[#292821] underline underline-offset-4 transition-colors"
+                >
+                  Back to top ↑
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[#554A3E]">
-              <a href="#" className="hover:text-[#B96F52] transition-colors">Home</a>
-              <a href="#features" className="hover:text-[#B96F52] transition-colors">Features</a>
-              <a href="#templates" className="hover:text-[#B96F52] transition-colors">Templates</a>
-              <a href="#philosophy" className="hover:text-[#B96F52] transition-colors">Philosophy</a>
-              <Link to="/login" className="hover:text-[#B96F52] transition-colors">Sign In</Link>
-              <Link to="/admin/login" className="hover:text-[#B96F52] transition-colors text-xs text-[#8A7967]">Admin Portal</Link>
+            {/* Col 3: Workspace & Templates */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold tracking-widest uppercase text-[#292821] font-sans">
+                Notebooks
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[#6B5E4F]">
+                <li>
+                  <a href="#templates" className="hover:text-[#B96F52] transition-colors flex items-center gap-1.5">
+                    <span>Study Notebook</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#templates" className="hover:text-[#B96F52] transition-colors flex items-center gap-1.5">
+                    <span>Daily Journal</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#templates" className="hover:text-[#B96F52] transition-colors flex items-center gap-1.5">
+                    <span>Idea Canvas</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#templates" className="hover:text-[#B96F52] transition-colors flex items-center gap-1.5">
+                    <span>Sprint Tasks</span>
+                  </a>
+                </li>
+                <li>
+                  <Link to="/notes" className="hover:text-[#B96F52] transition-colors">
+                    Personal Desk
+                  </Link>
+                </li>
+              </ul>
             </div>
+
+            {/* Col 4: Architecture & Philosophy */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold tracking-widest uppercase text-[#292821] font-sans">
+                Philosophy
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[#6B5E4F]">
+                <li>
+                  <a href="#philosophy" className="hover:text-[#B96F52] transition-colors">
+                    The NoteSpace Manifesto
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-[#B96F52] transition-colors">
+                    Sub-50ms Fast Search
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-[#B96F52] transition-colors">
+                    Category & Tag Matrix
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-[#B96F52] transition-colors">
+                    Zero Distraction Pacing
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-[#B96F52] transition-colors">
+                    Archival Soft Trash
+                  </a>
+                </li>
+              </ul>
+            </div>
+
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#8A7967]">
-            <p>© {new Date().getFullYear()} NoteSpace — All rights reserved. Built with MongoDB, Express, React, and TypeScript.</p>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-mono text-[11px] text-[#554A3E]">System Status: Operational</span>
-            </div>
+          {/* Bottom Bar: Clean Copyright */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#8A7967]">
+            <p className="text-center sm:text-left">
+              © {new Date().getFullYear()} NoteSpace. All rights reserved.
+            </p>
+            <p className="text-center sm:text-right font-serif italic text-xs text-[#8A7967]">
+              Designed for clarity and focus.
+            </p>
           </div>
         </div>
       </footer>

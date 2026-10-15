@@ -125,17 +125,17 @@ export function AdminSidebar({
 
         {/* Footer & Actions */}
         <div className="border-t p-3 space-y-2">
-          {/* Switch to normal App */}
+          {/* Switch to personal notebook view */}
           <NavLink
-            to="/dashboard"
+            to="/dashboard?view=user"
             className={cn(
               'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
               collapsed && 'justify-center px-2'
             )}
-            title={collapsed ? 'User View' : undefined}
+            title={collapsed ? 'Personal Notes View' : undefined}
           >
             <ExternalLink className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Back to Notes App</span>}
+            {!collapsed && <span>Personal Notes Dashboard</span>}
           </NavLink>
 
           {/* User Profile Info & Logout */}

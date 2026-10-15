@@ -132,10 +132,6 @@ export default function AdminLoginPage() {
                 'Sign In as Administrator'
               )}
             </Button>
-
-            <p className="text-[11px] text-center text-slate-500">
-              Need administrator access? Run <code className="text-slate-300 font-mono">npm run seed:admin</code> from the server CLI.
-            </p>
           </CardFooter>
         </form>
       </Card>

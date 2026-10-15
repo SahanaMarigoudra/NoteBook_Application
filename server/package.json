@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "db:check": "tsx src/scripts/verify-db-conditions.ts",
+    "db:view": "tsx src/scripts/view-db.ts",
     "lint": "eslint src tests --ext .ts",
     "typecheck": "tsc --noEmit"
   },

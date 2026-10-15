@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, PenTool, LayoutDashboard, Menu, X, ArrowRight } from 'lucide-react';
+import { BookOpen, PenTool, LayoutDashboard, Menu, X, ArrowRight, Shield } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -92,9 +92,21 @@ export function LandingNavbar() {
                   asChild
                   className="text-[#554A3E] hover:text-[#292821] hover:bg-[#EFE8D8]"
                 >
-                  <Link to="/dashboard" className="flex items-center gap-1.5 font-medium">
-                    <LayoutDashboard className="w-4 h-4 text-[#8A7967]" />
-                    <span>My Dashboard</span>
+                  <Link
+                    to={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'}
+                    className="flex items-center gap-1.5 font-medium"
+                  >
+                    {user?.role === 'admin' ? (
+                      <>
+                        <Shield className="w-4 h-4 text-indigo-600" />
+                        <span>Admin Dashboard</span>
+                      </>
+                    ) : (
+                      <>
+                        <LayoutDashboard className="w-4 h-4 text-[#8A7967]" />
+                        <span>My Dashboard</span>
+                      </>
+                    )}
                   </Link>
                 </Button>
                 <Button

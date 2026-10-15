@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, Zap, PenLine, Heart } from 'lucide-react';
+import { ArrowRight, Sparkles, Camera, BookOpen, PenTool, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/AuthContext';
 import { InteractiveNotebook } from './InteractiveNotebook';
@@ -8,6 +8,7 @@ import { InteractiveNotebook } from './InteractiveNotebook';
 export function NotebookHero() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'photo' | 'interactive'>('photo');
 
   const handlePrimaryCTA = () => {
     if (isAuthenticated) {
@@ -90,8 +91,81 @@ export function NotebookHero() {
           </div>
 
           {/* Right Column — Realistic Open Notebook (~60% on desktop) */}
-          <div className="lg:col-span-7 flex justify-center w-full">
-            <InteractiveNotebook />
+          <div className="lg:col-span-7 flex flex-col items-center w-full">
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1.5 p-1 bg-[#E8DFC9] rounded-xl border border-[#D5C9B3] shadow-xs mb-4 self-center sm:self-end">
+              <button
+                type="button"
+                onClick={() => setViewMode('photo')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'photo'
+                    ? 'bg-[#3D2C20] text-[#F7F3EB] shadow-xs'
+                    : 'text-[#6A5A4A] hover:text-[#292821]'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Classic Journal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('interactive')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'interactive'
+                    ? 'bg-[#3D2C20] text-[#F7F3EB] shadow-xs'
+                    : 'text-[#6A5A4A] hover:text-[#292821]'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Interactive Pages</span>
+              </button>
+            </div>
+
+            {/* Display View: Photo or Interactive Flipbook */}
+            {viewMode === 'photo' ? (
+              <div className="w-full relative group">
+                {/* Soft ambient desk glow behind the photo */}
+                <div className="absolute -inset-2 bg-gradient-to-r from-[#B96F52]/20 via-[#D4A373]/25 to-[#A6B49A]/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition duration-500 pointer-events-none" />
+
+                {/* Photo Frame Container */}
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-[#EAE2D2] bg-[#292119] transition-transform duration-500 group-hover:scale-[1.01]">
+                  <img
+                    src="/notebook-hero.jpg"
+                    alt="Handcrafted leather-bound journal with fountain pen and open creamy pages"
+                    className="w-full h-auto max-h-[580px] object-cover block"
+                    loading="eager"
+                  />
+
+                  {/* Subtle vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent pointer-events-none" />
+
+                  {/* Top Badge: Tactile Craftsmanship */}
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#2D2118]/85 backdrop-blur-md text-[#E8DFC9] border border-[#5A4535]/60 px-3.5 py-1.5 rounded-full text-xs font-serif shadow-lg">
+                    <PenTool className="w-3.5 h-3.5 text-[#D4A373]" />
+                    <span>Archival Leather Journal & Fountain Pen</span>
+                  </div>
+
+                  {/* Bottom Bar: Action & Quote */}
+                  <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-white/95 bg-[#1F1710]/85 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 shadow-xl">
+                    <div className="flex items-center gap-2.5">
+                      <Sparkles className="w-4 h-4 text-[#D4A373] shrink-0" />
+                      <span className="font-serif italic text-sm text-[#F7F3EB]">
+                        “Your ideas, captured with quiet reverence.”
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handlePrimaryCTA}
+                      className="bg-[#B96F52] hover:bg-[#A35D42] text-white text-xs px-3.5 py-1.5 h-8 rounded-lg shadow-sm font-medium self-end sm:self-auto shrink-0"
+                    >
+                      <span>Start Your Notes</span>
+                      <ExternalLink className="w-3 h-3 ml-1.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <InteractiveNotebook />
+            )}
           </div>
 
         </div>

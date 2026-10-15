@@ -17,7 +17,9 @@
     "lint": "npm run lint --prefix server && npm run lint --prefix client",
     "typecheck": "npm run typecheck --prefix server && npm run typecheck --prefix client",
     "setup": "npm install && npm install --prefix server && npm install --prefix client",
-    "seed:admin": "npm run seed:admin --prefix server"
+    "seed:admin": "npm run seed:admin --prefix server",
+    "db:check": "npm run db:check --prefix server",
+    "db:view": "npm run db:view --prefix server"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

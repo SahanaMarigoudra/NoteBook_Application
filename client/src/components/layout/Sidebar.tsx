@@ -17,6 +17,8 @@ import {
   BookHeart,
   Lightbulb,
   CheckSquare,
+  Shield,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -85,6 +87,23 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       <ScrollArea className="flex-1 px-3 py-4">
+        {/* Administrator Switcher if logged in as Admin */}
+        {user?.role === 'admin' && (
+          <div className="mb-3">
+            <Link
+              to="/admin/dashboard"
+              onClick={onClose}
+              className="flex items-center justify-between p-2 rounded-lg bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-xs font-semibold transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Admin Control Panel</span>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+        )}
+
         {/* Main Nav */}
         <nav className="space-y-1">
           {navItems.map(({ to, icon: Icon, label }) => (

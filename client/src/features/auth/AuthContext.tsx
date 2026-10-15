@@ -7,7 +7,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('ns_access_token', data.data.accessToken);
     setUser(data.data.user);
+    return data.data.user as User;
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, confirmPassword: string) => {
